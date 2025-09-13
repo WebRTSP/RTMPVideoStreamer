@@ -17,8 +17,6 @@ if(DEFINED ENV{SNAPCRAFT_PROJECT_NAME})
 endif()
 
 set(ONVIF_SUPPORT OFF CACHE BOOL "")
-add_subdirectory(WebRTSP)
-add_subdirectory(www)
 
 find_package(Threads REQUIRED)
 
@@ -30,14 +28,19 @@ pkg_search_module(GSSDP REQUIRED gssdp-1.6)
 pkg_search_module(GSTREAMER REQUIRED gstreamer-1.0)
 pkg_search_module(JANSSON REQUIRED jansson)
 
+add_subdirectory(WebRTSP)
+add_subdirectory(www)
+
 file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     *.cpp
     *.h
     *.conf.sample
-    README.md)
+    README.md
+)
 
 file(GLOB_RECURSE SNAP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-    snap/*)
+    snap/*
+)
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${SNAP})
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -46,7 +49,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${LIBCONFIG_INCLUDE_DIRS}
     ${GSSDP_INCLUDE_DIRS}
     ${JANSSON_INCLUDE_DIRS}
-    ${GSTREAMER_INCLUDE_DIRS})
+    ${GSTREAMER_INCLUDE_DIRS}
+)
 target_link_libraries(${PROJECT_NAME}
     ${GLIB_LDFLAGS}
     ${SPDLOG_LDFLAGS}
@@ -58,7 +62,8 @@ target_link_libraries(${PROJECT_NAME}
     Http
     Signalling
     RtStreaming
-    Threads::Threads)
+    Threads::Threads
+)
 
 if(VK_VIDEO_STREAMER)
     set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "VKVideoStreamer")
