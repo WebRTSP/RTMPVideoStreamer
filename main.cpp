@@ -598,9 +598,7 @@ void PostConfigChanges(Context* context, std::unique_ptr<ConfigChanges>&& change
         });
 }
 #endif
-
 }
-
 
 int main(int argc, char *argv[])
 {
