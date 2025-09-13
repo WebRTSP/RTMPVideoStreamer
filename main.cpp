@@ -6,12 +6,14 @@
 
 #include "CxxPtr/GlibPtr.h"
 
+#if ENABLE_BROWSER_UI
 #include "WebRTSP/Http/Config.h"
 #include "WebRTSP/Http/HttpMicroServer.h"
 #include "WebRTSP/Signalling/Config.h"
 #include "WebRTSP/Signalling/WsServer.h"
 #include "WebRTSP/Signalling/ServerSession.h"
 #include "WebRTSP/RtStreaming/GstRtStreaming/GstReStreamer2.h"
+#endif
 
 #include <libconfig.h>
 
@@ -20,8 +22,14 @@
 #include "Config.h"
 #include "ConfigHelpers.h"
 #include "ReStreamer.h"
+
+#if ENABLE_SSDP
 #include "SSDP.h"
+#endif
+
+#if ENABLE_BROWSER_UI
 #include "RestApi.h"
+#endif
 
 
 enum {
@@ -252,16 +260,20 @@ void LoadStreamers(
 }
 
 bool LoadConfig(
+#if ENABLE_BROWSER_UI
     http::Config* httpConfig,
     signalling::Config* wsConfig,
+#endif
     Config* config)
 {
     const std::deque<std::string> configDirs = ::ConfigDirs();
     if(configDirs.empty())
         return false;
 
+#if ENABLE_BROWSER_UI
     http::Config loadedHttpConfig = *httpConfig;
     signalling::Config loadedWsConfig = *wsConfig;
+#endif
     Config loadedConfig = *config;
     Config loadedAppConfig;
 
@@ -311,6 +323,7 @@ bool LoadConfig(
             }
         }
 
+#if ENABLE_BROWSER_UI
         const char* wwwRoot = nullptr;
         if(CONFIG_TRUE == config_lookup_string(&config, "www-root", &wwwRoot)) {
             loadedHttpConfig.wwwRoot = wwwRoot;
@@ -330,6 +343,7 @@ bool LoadConfig(
         if(CONFIG_TRUE == config_lookup_int(&config, "ws-port", &wsPort)) {
             loadedWsConfig.port = static_cast<unsigned short>(wsPort);
         }
+#endif
 
         const char* source = nullptr;
         config_lookup_string(&config, "source", &source);
@@ -359,10 +373,14 @@ bool LoadConfig(
     }
 
     if(success) {
+#if ENABLE_BROWSER_UI
         *httpConfig = loadedHttpConfig;
+#endif
         *config = loadedConfig;
 
+#if ENABLE_BROWSER_UI
         SaveAppConfig(*config);
+#endif
     }
 
     assert(config->reStreamers.size() == config->reStreamersOrder.size());
@@ -371,10 +389,14 @@ bool LoadConfig(
 }
 
 typedef std::map<std::string, ReStreamer> RTMPReStreamers;
+#if ENABLE_BROWSER_UI
 typedef std::map<std::string, std::unique_ptr<GstStreamingSource>> ReStreamers;
+#endif
 struct Context {
     Config config;
+#if ENABLE_BROWSER_UI
     ReStreamers reStreamers;
+#endif
     RTMPReStreamers rtmpReStreamers;
     std::map<std::string, guint> restarting; // reStreamerId -> timeout event source id
 };
@@ -501,6 +523,7 @@ void ScheduleStartReStream(
     context->restarting.emplace(reStreamerId, timeoutId);
 }
 
+#if ENABLE_BROWSER_UI
 static std::unique_ptr<WebRTCPeer> CreateWebRTCPeer(
     const ReStreamers& reStreamers,
     const std::string& uri) noexcept
@@ -574,12 +597,14 @@ void PostConfigChanges(Context* context, std::unique_ptr<ConfigChanges>&& change
             delete static_cast<Data*>(userData);
         });
 }
+#endif
 
 }
 
 
 int main(int argc, char *argv[])
 {
+#if ENABLE_BROWSER_UI
     http::Config httpConfig {
         .port = DEFAULT_HTTP_PORT,
         .realm = "VideoStreamer",
@@ -588,6 +613,7 @@ int main(int argc, char *argv[])
     };
 
     signalling::Config wsConfig;
+#endif
 
     Context context;
 
@@ -600,9 +626,15 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    if(!LoadConfig(&httpConfig, &wsConfig, &context.config))
+    if(!LoadConfig(
+#if ENABLE_BROWSER_UI
+        &httpConfig,
+        &wsConfig
+#endif
+        &context.config))
+    {
         return -1;
-
+    }
 
     gst_init(&argc, &argv);
 
@@ -611,16 +643,20 @@ int main(int argc, char *argv[])
 
     for(const auto& pair: context.config.reStreamers) {
         const std::string& uniqueId = pair.first;
+
+#if ENABLE_BROWSER_UI
         const Config::ReStreamer& reStreamer = pair.second;
         context.reStreamers.emplace(
             reStreamer.sourceUrl,
             std::make_unique<GstReStreamer2>(
                 reStreamer.sourceUrl,
                 reStreamer.forceH264ProfileLevelId));
+#endif
 
         StartReStream(&context, uniqueId);
     }
 
+#if ENABLE_BROWSER_UI
     std::unique_ptr<http::MicroServer> httpServerPtr;
     if(httpConfig.port) {
         std::string configJs =
@@ -660,8 +696,11 @@ int main(int argc, char *argv[])
                 std::placeholders::_2));
         wsServerPtr->init();
     }
+#endif
 
+#if ENABLE_SSDP
     SSDPContext ssdpContext;
+
 #ifdef SNAPCRAFT_BUILD
     const gchar* snapData = g_getenv("SNAP_DATA");
     g_autofree gchar* deviceUuidFilePath = nullptr;
@@ -677,7 +716,9 @@ int main(int argc, char *argv[])
     }
     const bool hadDeviceUuid = ssdpContext.deviceUuid.has_value();
 #endif
+
     SSDPPublish(&ssdpContext);
+
 #ifdef SNAPCRAFT_BUILD
     if(!hadDeviceUuid && ssdpContext.deviceUuid.has_value() && deviceUuidFilePath) {
         if(!g_file_set_contents_full(
@@ -691,6 +732,7 @@ int main(int argc, char *argv[])
             Log()->warn("Failed to save device uuid to \"{}\"", deviceUuidFilePath);
         }
     }
+#endif
 #endif
 
     g_main_loop_run(loop);
