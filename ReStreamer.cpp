@@ -157,7 +157,6 @@ void ReStreamer::start() noexcept
         return;
     }
 
-
     _h264CapsPtr.reset(gst_caps_from_string("video/x-h264"));
     _audioRawCapsPtr.reset(gst_caps_from_string("audio/x-raw"));
 
@@ -179,7 +178,7 @@ void ReStreamer::start() noexcept
 
     auto srcPadAddedCallback =
         (void (*)(GstElement*, GstPad*, gpointer))
-         [] (GstElement* decodebin, GstPad* pad, gpointer userData)
+        [] (GstElement* decodebin, GstPad* pad, gpointer userData)
     {
         ReStreamer* self = static_cast<ReStreamer*>(userData);
         self->srcPadAdded(decodebin, pad);
@@ -188,7 +187,7 @@ void ReStreamer::start() noexcept
 
     auto noMorePadsCallback =
         (void (*)(GstElement*,  gpointer))
-         [] (GstElement* decodebin, gpointer userData)
+        [] (GstElement* decodebin, gpointer userData)
     {
         ReStreamer* self = static_cast<ReStreamer*>(userData);
         self->noMorePads(decodebin);
