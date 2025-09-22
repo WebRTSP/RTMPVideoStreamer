@@ -166,6 +166,85 @@ void LoadStreamers(
     }
 }
 
+void LoadConfig(
+#if ENABLE_BROWSER_UI
+    http::Config* loadedHttpConfig,
+    signalling::Config* loadedWsConfig,
+#endif
+    Config* loadedConfig,
+    const Config* appConfig,
+    const std::string& configFile)
+{
+    if(!g_file_test(configFile.c_str(),  G_FILE_TEST_IS_REGULAR)) {
+        Log()->info("Config \"{}\" not found", configFile);
+        return;
+    }
+
+    g_auto(config_t) config;
+    config_init(&config);
+
+    Log()->info("Loading config \"{}\"", configFile);
+    if(!config_read_file(&config, configFile.c_str())) {
+        Log()->error("Fail load config. {}. {}:{}",
+            config_error_text(&config),
+            configFile,
+            config_error_line(&config));
+        return;
+    }
+
+    int logLevel = 0;
+    if(CONFIG_TRUE == config_lookup_int(&config, "log-level", &logLevel)) {
+        if(logLevel > 0) {
+            loadedConfig->logLevel =
+                static_cast<spdlog::level::level_enum>(
+                    spdlog::level::critical - std::min<int>(logLevel, spdlog::level::critical));
+        }
+    }
+
+#if ENABLE_BROWSER_UI
+    const char* wwwRoot = nullptr;
+    if(CONFIG_TRUE == config_lookup_string(&config, "www-root", &wwwRoot)) {
+        loadedHttpConfig->wwwRoot = wwwRoot;
+    }
+
+    int loopbackOnly = false;
+    if(CONFIG_TRUE == config_lookup_bool(&config, "loopback-only", &loopbackOnly)) {
+        loadedHttpConfig->bindToLoopbackOnly = loopbackOnly != false;
+    }
+
+    int httpPort;
+    if(CONFIG_TRUE == config_lookup_int(&config, "http-port", &httpPort)) {
+        loadedHttpConfig->port = static_cast<unsigned short>(httpPort);
+    }
+
+    int wsPort;
+    if(CONFIG_TRUE == config_lookup_int(&config, "ws-port", &wsPort)) {
+        loadedWsConfig->port = static_cast<unsigned short>(wsPort);
+    }
+#endif
+
+    const char* source = nullptr;
+    config_lookup_string(&config, "source", &source);
+    const char* key = nullptr;
+    config_lookup_string(&config, "key", &key);
+
+    if(source && key) {
+        g_autofree gchar* uniqueId = g_uuid_string_random();
+        const auto& emplaceResult = loadedConfig->reStreamers.emplace(
+            uniqueId,
+            Config::ReStreamer {
+                source,
+                std::string(),
+                BuildTargetUrl(key),
+                true });
+        if(emplaceResult.second) {
+            loadedConfig->reStreamersOrder.emplace_back(emplaceResult.first->first);
+        }
+    }
+
+    LoadStreamers(config, loadedConfig, appConfig);
+}
+
 bool LoadConfig(
 #if ENABLE_BROWSER_UI
     http::Config* httpConfig,
@@ -204,74 +283,14 @@ bool LoadConfig(
 
     for(const std::string& configDir: configDirs) {
         const std::string& configFile = UserConfigPath(configDir);
-        if(!g_file_test(configFile.c_str(),  G_FILE_TEST_IS_REGULAR)) {
-            Log()->info("Config \"{}\" not found", configFile);
-            continue;
-        }
-
-        g_auto(config_t) config;
-        config_init(&config);
-
-        Log()->info("Loading config \"{}\"", configFile);
-        if(!config_read_file(&config, configFile.c_str())) {
-            Log()->error("Fail load config. {}. {}:{}",
-                config_error_text(&config),
-                configFile,
-                config_error_line(&config));
-            return false;
-        }
-
-        int logLevel = 0;
-        if(CONFIG_TRUE == config_lookup_int(&config, "log-level", &logLevel)) {
-            if(logLevel > 0) {
-                loadedConfig.logLevel =
-                    static_cast<spdlog::level::level_enum>(
-                        spdlog::level::critical - std::min<int>(logLevel, spdlog::level::critical));
-            }
-        }
-
-#if ENABLE_BROWSER_UI
-        const char* wwwRoot = nullptr;
-        if(CONFIG_TRUE == config_lookup_string(&config, "www-root", &wwwRoot)) {
-            loadedHttpConfig.wwwRoot = wwwRoot;
-        }
-
-        int loopbackOnly = false;
-        if(CONFIG_TRUE == config_lookup_bool(&config, "loopback-only", &loopbackOnly)) {
-            loadedHttpConfig.bindToLoopbackOnly = loopbackOnly != false;
-        }
-
-        int httpPort;
-        if(CONFIG_TRUE == config_lookup_int(&config, "http-port", &httpPort)) {
-            loadedHttpConfig.port = static_cast<unsigned short>(httpPort);
-        }
-
-        int wsPort;
-        if(CONFIG_TRUE == config_lookup_int(&config, "ws-port", &wsPort)) {
-            loadedWsConfig.port = static_cast<unsigned short>(wsPort);
-        }
-#endif
-
-        const char* source = nullptr;
-        config_lookup_string(&config, "source", &source);
-        const char* key = nullptr;
-        config_lookup_string(&config, "key", &key);
-
-        if(source && key) {
-            g_autofree gchar* uniqueId = g_uuid_string_random();
-            const auto& emplaceResult = loadedConfig.reStreamers.emplace(
-                uniqueId,
-                Config::ReStreamer {
-                    source,
-                    std::string(),
-                    BuildTargetUrl(key),
-                    true });
-            if(emplaceResult.second) {
-                loadedConfig.reStreamersOrder.emplace_back(emplaceResult.first->first);
-            }
-        }
-
-        LoadStreamers(config, &loadedConfig, &loadedAppConfig);
+        LoadConfig(
+#   if ENABLE_BROWSER_UI
+            &loadedHttpConfig,
+            &loadedWsConfig,
+#   endif
+            &loadedConfig,
+            &loadedAppConfig,
+            configFile);
     }
 
     bool success = true;
