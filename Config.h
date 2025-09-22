@@ -28,6 +28,12 @@ struct Config
 };
 
 struct Config::ReStreamer {
+    static std::string BuildTargetUrl(const char* targetUrl, const char* key);
+    static std::string BuildTargetUrl(const char* key)
+        { return BuildTargetUrl(nullptr, key); }
+    static std::string BuildTargetUrl(const std::string& key)
+        { return BuildTargetUrl(key.c_str()); }
+
     std::string sourceUrl;
     std::string description;
     std::string targetUrl;

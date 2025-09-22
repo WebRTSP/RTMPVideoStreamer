@@ -27,30 +27,6 @@ G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(config_t, config_destroy)
 
 const auto Log = ReStreamerLog;
 
-std::string BuildTargetUrl(const char* key, const char* targetUrl = nullptr)
-{
-#if VK_VIDEO_STREAMER || YOUTUBE_LIVE_STREAMER
-    std::string outTargetUrl(targetUrl ? std::string_view(targetUrl) : Config::targetUrlTemplate);
-#else
-    std::string outTargetUrl = targetUrl ? std::string_view(targetUrl) : std::string();
-#endif
-
-    std::string::size_type placeholderPos = outTargetUrl.find(
-        Config::KeyPlaceholder.data(),
-        Config::KeyPlaceholder.size());
-    if(placeholderPos == std::string::npos) {
-        return outTargetUrl;
-    } else if(key) {
-        return outTargetUrl.replace(
-            placeholderPos,
-            Config::KeyPlaceholder.size(),
-            key);
-    } else {
-        assert(false);
-        return std::string();
-    }
-}
-
 std::map<std::string, Config::ReStreamer>::const_iterator
 FindStreamerId(
     const Config& appConfig,
@@ -133,7 +109,7 @@ void LoadStreamers(
                 continue;
             }
 
-            const std::string targetUrl = BuildTargetUrl(key, target);
+            const std::string targetUrl = Config::ReStreamer::BuildTargetUrl(target, key);
             if(loadedReStreamers.end() != FindStreamerId(*loadedConfig, source, targetUrl)) {
                 Log()->warn("Found streamer with duplicated \"source\" and \"key\" properties. Streamer skipped.");
                 continue;
@@ -235,7 +211,7 @@ void LoadConfig(
             Config::ReStreamer {
                 source,
                 std::string(),
-                BuildTargetUrl(key),
+                Config::ReStreamer::BuildTargetUrl(key),
                 true });
         if(emplaceResult.second) {
             loadedConfig->reStreamersOrder.emplace_back(emplaceResult.first->first);

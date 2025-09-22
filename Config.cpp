@@ -26,6 +26,32 @@ G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(config_t, config_destroy)
 
 }
 
+std::string Config::ReStreamer::BuildTargetUrl(
+    const char* targetUrl,
+    const char* key)
+{
+#if VK_VIDEO_STREAMER || YOUTUBE_LIVE_STREAMER
+    std::string outTargetUrl(targetUrl ? std::string_view(targetUrl) : Config::targetUrlTemplate);
+#else
+    std::string outTargetUrl(targetUrl ? std::string_view(targetUrl) : std::string_view());
+#endif
+
+    std::string::size_type placeholderPos = outTargetUrl.find(
+        Config::KeyPlaceholder.data(),
+        Config::KeyPlaceholder.size());
+    if(placeholderPos == std::string::npos) {
+        return outTargetUrl;
+    } else if(key) {
+        return outTargetUrl.replace(
+            placeholderPos,
+            Config::KeyPlaceholder.size(),
+            key);
+    } else {
+        assert(false);
+        return std::string();
+    }
+}
+
 std::string UserConfigPath(const std::string& userConfigDir)
 {
     return userConfigDir + "/" + ConfigFileName;
