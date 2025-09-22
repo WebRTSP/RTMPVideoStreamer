@@ -59,6 +59,8 @@ set(SOURCES
     ReStreamer.h
     ReStreamer.cpp
     main.cpp
+    StreamerMain.h
+    StreamerMain.cpp
     rtmp-streamer.conf.sample
     live-streamer.conf.sample
     vk-streamer.conf.sample
