@@ -324,6 +324,7 @@ struct Context {
     RTMPReStreamers rtmpReStreamers;
     std::map<std::string, guint> restarting; // reStreamerId -> timeout event source id
 };
+thread_local Context* streamContext = nullptr;
 
 void StopReStream(Context* context, const std::string& reStreamerId)
 {
@@ -505,18 +506,21 @@ void ConfigChanged(Context* context, const std::unique_ptr<ConfigChanges>& chang
     // FIXME? add config save to disk
 }
 
-void PostConfigChanges(Context* context, std::unique_ptr<ConfigChanges>&& changes)
+void PostConfigChanges(std::unique_ptr<ConfigChanges>&& changes)
 {
-    typedef std::tuple<Context*, std::unique_ptr<ConfigChanges>> Data;
+    typedef std::tuple<std::unique_ptr<ConfigChanges>> Data;
 
     g_idle_add_full(
         G_PRIORITY_DEFAULT_IDLE,
         [] (gpointer userData) -> gboolean {
             Data& data = *static_cast<Data*>(userData);
-            ConfigChanged(std::get<0>(data), std::get<1>(data));
+            assert(::streamContext);
+            if(::streamContext) {
+                ConfigChanged(::streamContext, std::get<0>(data));
+            }
             return G_SOURCE_REMOVE;
         },
-        new Data(context, std::move(changes)),
+        new Data(std::move(changes)),
         [] (gpointer userData) {
             delete static_cast<Data*>(userData);
         });
@@ -538,6 +542,7 @@ int main(int argc, char *argv[])
 #endif
 
     Context context;
+    ::streamContext = &context;
 
 #ifdef SNAPCRAFT_BUILD
     const gchar* snapPath = g_getenv("SNAP");
@@ -595,8 +600,8 @@ int main(int argc, char *argv[])
                 std::bind(
                     &rest::HandleRequest,
                     std::make_shared<Config>(context.config),
-                    [context = &context] (std::unique_ptr<ConfigChanges>&& changes) {
-                        PostConfigChanges(context, std::move(changes));
+                    [] (std::unique_ptr<ConfigChanges>&& changes) {
+                        PostConfigChanges(std::move(changes));
                     },
                     std::placeholders::_1,
                     std::placeholders::_2,
@@ -658,6 +663,7 @@ int main(int argc, char *argv[])
 #endif
 
     g_main_loop_run(loop);
+    ::streamContext = nullptr;
 
     return 0;
 }
