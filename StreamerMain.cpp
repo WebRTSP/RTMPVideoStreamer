@@ -49,16 +49,48 @@ struct Context {
     ReStreamers reStreamers;
 #endif
     RTMPReStreamers rtmpReStreamers;
-    std::map<std::string, guint> restarting; // reStreamerId -> timeout event source id
+    std::map<std::string, GSourcePtr> restarting; // reStreamerId -> timer GSource*
 };
 thread_local Context* streamContext = nullptr;
+
+void AddIdle(
+    GSourceFunc function,
+    gpointer data,
+    GDestroyNotify notify)
+{
+    GSource* source = g_idle_source_new();
+    g_source_set_callback(
+        source,
+        function,
+        data,
+        notify);
+    g_source_attach(source, g_main_context_get_thread_default());
+    g_source_unref(source);
+}
+
+GSource* addSecondsTimeout(
+    guint interval,
+    GSourceFunc function,
+    gpointer data,
+    GDestroyNotify notify)
+{
+    GSource* source = g_timeout_source_new_seconds(interval);
+    g_source_set_callback(
+        source,
+        function,
+        data,
+        notify);
+    g_source_attach(source, g_main_context_get_thread_default());
+
+    return source;
+}
 
 void StopReStream(Context* context, const std::string& reStreamerId)
 {
     auto restartingIt = context->restarting.find(reStreamerId);
     if(restartingIt != context->restarting.end()) {
         Log()->info("Cancelling pending reStreaming restart for \"{}\"...", reStreamerId);
-        g_source_remove(restartingIt->second);
+        g_source_destroy(restartingIt->second.get());
         context->restarting.erase(restartingIt);
     }
 
@@ -162,8 +194,7 @@ void ScheduleStartReStream(
             return false;
         };
 
-    const guint timeoutId = g_timeout_add_seconds_full(
-        G_PRIORITY_DEFAULT,
+    GSource* timeoutSource = addSecondsTimeout(
         RECONNECT_INTERVAL,
         GSourceFunc(reconnect),
         new Data(context, reStreamerId),
@@ -171,7 +202,7 @@ void ScheduleStartReStream(
             delete reinterpret_cast<Data*>(userData);
         });
 
-    context->restarting.emplace(reStreamerId, timeoutId);
+    context->restarting.emplace(reStreamerId, timeoutSource);
 }
 
 #if ENABLE_BROWSER_UI
@@ -236,8 +267,7 @@ void PostConfigChanges(std::unique_ptr<ConfigChanges>&& changes)
 {
     typedef std::tuple<std::unique_ptr<ConfigChanges>> Data;
 
-    g_idle_add_full(
-        G_PRIORITY_DEFAULT_IDLE,
+    AddIdle(
         [] (gpointer userData) -> gboolean {
             Data& data = *static_cast<Data*>(userData);
             assert(::streamContext);
@@ -267,7 +297,9 @@ int StreamerMain(
 
     gst_init(nullptr, nullptr);
 
-    GMainLoopPtr loopPtr(g_main_loop_new(nullptr, FALSE));
+    GMainContext* mainContext = g_main_context_new();
+    g_main_context_push_thread_default(mainContext);
+    GMainLoopPtr loopPtr(g_main_loop_new(mainContext, FALSE));
     GMainLoop* loop = loopPtr.get();
 
     for(const auto& pair: context.config.reStreamers) {
@@ -365,6 +397,10 @@ int StreamerMain(
 #endif
 
     g_main_loop_run(loop);
+
+    g_main_context_pop_thread_default(mainContext);
+    g_main_context_unref(mainContext);
+
     ::streamContext = nullptr;
 
     return 0;
