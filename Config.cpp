@@ -7,7 +7,6 @@
 #include "Log.h"
 #include "ConfigHelpers.h"
 
-
 namespace {
 
 const auto Log = ReStreamerLog;

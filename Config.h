@@ -18,9 +18,9 @@ struct Config
     spdlog::level::level_enum logLevel = spdlog::level::info;
 
 #if VK_VIDEO_STREAMER
-    std::string targetUrl = "rtmp://ovsu.okcdn.ru/input/{key}";
+    const static constexpr std::string_view targetUrlTemplate = "rtmp://ovsu.okcdn.ru/input/{key}";
 #elif YOUTUBE_LIVE_STREAMER
-    std::string targetUrl = "rtmp://a.rtmp.youtube.com/live2/{key}";
+    const static constexpr std::string_view targetUrlTemplate = "rtmp://a.rtmp.youtube.com/live2/{key}";
 #endif
 
     std::map<std::string, ReStreamer> reStreamers; // uniqueId -> ReStreamer

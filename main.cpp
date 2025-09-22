@@ -44,15 +44,12 @@ namespace {
 
 G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(config_t, config_destroy)
 
-std::string BuildTargetUrl(
-    const Config& config,
-    const char* targetUrl,
-    const char* key)
+std::string BuildTargetUrl(const char* key, const char* targetUrl = nullptr)
 {
 #if VK_VIDEO_STREAMER || YOUTUBE_LIVE_STREAMER
-    std::string outTargetUrl(targetUrl ? std::string_view(targetUrl) : config.targetUrl);
+    std::string outTargetUrl(targetUrl ? std::string_view(targetUrl) : Config::targetUrlTemplate);
 #else
-    std::string outTargetUrl = targetUrl;
+    std::string outTargetUrl = targetUrl ? std::string_view(targetUrl) : std::string();
 #endif
 
     std::string::size_type placeholderPos = outTargetUrl.find(
@@ -140,21 +137,20 @@ void LoadStreamers(
                 needsKey = targetView.find(
                     Config::KeyPlaceholder.data(),
                     Config::KeyPlaceholder.size()) != std::string_view::npos;
-#if VK_VIDEO_STREAMER || YOUTUBE_LIVE_STREAMER
-            } else if(loadedConfig->targetUrl.empty()) {
-#else
-            } else {
-#endif
+            }
+#if !VK_VIDEO_STREAMER && !YOUTUBE_LIVE_STREAMER
+            else {
                 Log()->warn("\"target\" property is missing. Streamer skipped.");
                 continue;
             }
+#endif
 
             if(needsKey && (!key || key[0] == '\0')) {
                 Log()->warn("\"key\" property is missing. Streamer skipped.");
                 continue;
             }
 
-            const std::string targetUrl = BuildTargetUrl(*loadedConfig, target, key);
+            const std::string targetUrl = BuildTargetUrl(key, target);
             if(loadedReStreamers.end() != FindStreamerId(*loadedConfig, source, targetUrl)) {
                 Log()->warn("Found streamer with duplicated \"source\" and \"key\" properties. Streamer skipped.");
                 continue;
@@ -285,7 +281,7 @@ bool LoadConfig(
                 Config::ReStreamer {
                     source,
                     std::string(),
-                    BuildTargetUrl(loadedConfig, nullptr, key),
+                    BuildTargetUrl(key),
                     true });
             if(emplaceResult.second) {
                 loadedConfig.reStreamersOrder.emplace_back(emplaceResult.first->first);
