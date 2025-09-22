@@ -53,6 +53,7 @@ set(SOURCES
     Log.h
     Log.cpp
     Config.h
+    Config.cpp
     ConfigHelpers.h
     ConfigHelpers.cpp
     ReStreamer.h

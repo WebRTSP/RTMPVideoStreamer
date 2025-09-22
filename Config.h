@@ -45,3 +45,8 @@ struct ConfigChanges
 struct ConfigChanges::ReStreamerChanges {
     std::optional<bool> enabled;
 };
+
+std::string UserConfigPath(const std::string& userConfigDir);
+
+std::optional<std::string> AppConfigPath();
+void SaveAppConfig(const Config& appConfig);
