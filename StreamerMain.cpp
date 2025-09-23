@@ -108,6 +108,8 @@ void StartReStream(
     Context* context,
     const std::string& reStreamerId)
 {
+    assert(context == ::streamContext);
+
     const Config& config = context->config;
     RTMPReStreamers* reStreamers = &(context->rtmpReStreamers);
 
@@ -166,6 +168,8 @@ void ScheduleStartReStream(
     Context* context,
     const std::string& reStreamerId)
 {
+    assert(context == ::streamContext);
+
     if(context->restarting.find(reStreamerId) != context->restarting.end()) {
         Log()->debug("ReStreamer restart already pending. Ignoring new request...");
         return;
