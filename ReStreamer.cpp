@@ -21,6 +21,11 @@ ReStreamer::ReStreamer(
 ReStreamer::~ReStreamer()
 {
     stop();
+
+    if(_pipelinePtr) {
+        GstBusPtr busPtr(gst_pipeline_get_bus(GST_PIPELINE(_pipelinePtr.get())));
+        gst_bus_remove_watch(busPtr.get());
+    }
 }
 
 void ReStreamer::setState(GstState state) noexcept
