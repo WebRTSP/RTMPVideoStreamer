@@ -1,5 +1,7 @@
 #include "Config.h"
 
+#include <algorithm>
+
 #include <glib.h>
 
 #include <libconfig.h>
@@ -50,6 +52,30 @@ std::string Config::ReStreamer::BuildTargetUrl(
         assert(false);
         return std::string();
     }
+}
+
+std::map<std::string, Config::ReStreamer>::const_iterator
+Config::addReStreamer(
+    const std::string& id,
+    const Config::ReStreamer& reStreamer)
+{
+    const auto& emplaceResult = reStreamers.emplace(id, reStreamer);
+    if(emplaceResult.second) {
+        reStreamersOrder.emplace_back(id);
+    }
+
+    return emplaceResult.first;
+}
+
+void Config::removeReStreamer(const std::string& id)
+{
+    reStreamers.erase(id);
+    reStreamersOrder.erase(
+        std::remove(
+            reStreamersOrder.begin(),
+            reStreamersOrder.end(),
+            id),
+        reStreamersOrder.end());
 }
 
 std::string UserConfigPath(const std::string& userConfigDir)

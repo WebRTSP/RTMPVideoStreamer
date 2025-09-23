@@ -128,16 +128,13 @@ void LoadStreamers(
                 id = uniqueId;
             }
 
-            const auto& emplaceResult = loadedConfig->reStreamers.emplace(
+            loadedConfig->addReStreamer(
                 id,
                 Config::ReStreamer {
                     source,
                     description,
                     targetUrl,
                     enabled != FALSE });
-            if(emplaceResult.second) {
-                loadedConfig->reStreamersOrder.emplace_back(emplaceResult.first->first);
-            }
         }
     }
 }
@@ -206,16 +203,13 @@ void LoadConfig(
 
     if(source && key) {
         g_autofree gchar* uniqueId = g_uuid_string_random();
-        const auto& emplaceResult = loadedConfig->reStreamers.emplace(
+        loadedConfig->addReStreamer(
             uniqueId,
             Config::ReStreamer {
                 source,
                 std::string(),
                 Config::ReStreamer::BuildTargetUrl(key),
                 true });
-        if(emplaceResult.second) {
-            loadedConfig->reStreamersOrder.emplace_back(emplaceResult.first->first);
-        }
     }
 
     LoadStreamers(config, loadedConfig, appConfig);

@@ -23,6 +23,12 @@ struct Config
     const static constexpr std::string_view targetUrlTemplate = "rtmp://a.rtmp.youtube.com/live2/{key}";
 #endif
 
+    std::map<std::string, ReStreamer>::const_iterator
+    addReStreamer(
+        const std::string& id,
+        const Config::ReStreamer&);
+    void removeReStreamer(const std::string& id);
+
     std::map<std::string, ReStreamer> reStreamers; // uniqueId -> ReStreamer
     std::deque<std::string> reStreamersOrder;
 };
