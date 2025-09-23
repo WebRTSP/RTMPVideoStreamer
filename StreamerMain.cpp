@@ -53,6 +53,10 @@ struct Context {
 };
 thread_local Context* streamContext = nullptr;
 
+thread_local GMainContext* mainContext = nullptr;
+thread_local std::thread streamThread;
+thread_local GMainLoop* streamLoop = nullptr;
+
 void AddIdle(
     GSourceFunc function,
     gpointer data,
@@ -64,7 +68,7 @@ void AddIdle(
         function,
         data,
         notify);
-    g_source_attach(source, g_main_context_get_thread_default());
+    g_source_attach(source, ::mainContext);
     g_source_unref(source);
 }
 
@@ -80,7 +84,7 @@ GSource* addSecondsTimeout(
         function,
         data,
         notify);
-    g_source_attach(source, g_main_context_get_thread_default());
+    g_source_attach(source, ::mainContext);
 
     return source;
 }
@@ -234,6 +238,7 @@ std::unique_ptr<ServerSession> CreateWebRTSPSession(
             sendRequest,
             sendResponse);
 }
+#endif
 
 void ConfigChanged(Context* context, const std::unique_ptr<ConfigChanges>& changes)
 {
@@ -245,26 +250,78 @@ void ConfigChanged(Context* context, const std::unique_ptr<ConfigChanges>& chang
         const ConfigChanges::ReStreamerChanges& reStreamerChanges = pair.second;
 
         const auto& it = config.reStreamers.find(uniqueId);
-        if(it == config.reStreamers.end()) {
-            Log()->warn("Got change request for unknown reStreamer \"{}\"", uniqueId);
-            return;
-        }
+        if(it == config.reStreamers.end() && !reStreamerChanges.drop) {
+            if(config.addReStreamer(uniqueId, reStreamerChanges.makeReStreamer())->second.enabled) {
+                StartReStream(context, uniqueId);
+            }
+        } else if(reStreamerChanges.drop) {
+            StopReStream(context, uniqueId);
+            config.reStreamers.erase(it);
+        } else {
+            Config::ReStreamer& reStreamerConfig = it->second;
 
-        Config::ReStreamer& reStreamerConfig = it->second;
+            bool stopRequired = false;
+            bool startRequired = false;
 
-        if(reStreamerChanges.enabled) {
-            if(reStreamerConfig.enabled != *reStreamerChanges.enabled) {
+            if(
+                reStreamerChanges.sourceUrl &&
+                reStreamerConfig.sourceUrl != *reStreamerChanges.sourceUrl
+            ) {
+                reStreamerConfig.sourceUrl = *reStreamerChanges.sourceUrl;
+                stopRequired = true;
+                startRequired = true;
+            }
+            if(
+                reStreamerChanges.description &&
+                reStreamerConfig.description != *reStreamerChanges.description
+            ) {
+                reStreamerConfig.description = *reStreamerChanges.description;
+            }
+
+            if(
+                reStreamerChanges.targetUrl &&
+                reStreamerConfig.targetUrl != *reStreamerChanges.targetUrl
+            ) {
+                reStreamerConfig.targetUrl = *reStreamerChanges.targetUrl;
+                stopRequired = true;
+                startRequired = true;
+            }
+
+            if(reStreamerChanges.enabled && reStreamerConfig.enabled != *reStreamerChanges.enabled) {
                 reStreamerConfig.enabled = *reStreamerChanges.enabled;
                 if(reStreamerConfig.enabled) {
-                    StartReStream(context, uniqueId);
+                    startRequired = true;
                 } else {
-                    StopReStream(context, uniqueId);
+                    stopRequired = true;
+                    startRequired = false; // overrides all above, so order is important
                 }
             }
+
+            if(stopRequired)
+                StopReStream(context, uniqueId);
+            if(startRequired)
+                StartReStream(context, uniqueId);
         }
     }
+}
 
-    // FIXME? add config save to disk
+void PostQuit()
+{
+    GSource* source = g_idle_source_new();
+    g_source_set_callback(
+        source,
+        [] (gpointer) -> gboolean {
+            assert(::streamLoop);
+            if(::streamLoop)
+                g_main_loop_quit(::streamLoop);
+            return G_SOURCE_REMOVE;
+        },
+        nullptr,
+        nullptr);
+    g_source_attach(source, ::mainContext);
+    g_source_unref(source);
+}
+
 }
 
 void PostConfigChanges(std::unique_ptr<ConfigChanges>&& changes)
@@ -285,26 +342,31 @@ void PostConfigChanges(std::unique_ptr<ConfigChanges>&& changes)
             delete static_cast<Data*>(userData);
         });
 }
-#endif
-
-}
 
 int StreamerMain(
 #if ENABLE_BROWSER_UI
     const http::Config& httpConfig,
     const signalling::Config& wsConfig,
 #endif
-    const Config& config)
+    const Config& config,
+    GMainContext* mainContext)
 {
     Context context { config };
     ::streamContext = &context;
 
     gst_init(nullptr, nullptr);
 
-    GMainContext* mainContext = g_main_context_new();
+    if(!mainContext) {
+        mainContext = g_main_context_new();
+    } else {
+        g_main_context_ref(mainContext);
+    }
+
+    ::mainContext = mainContext;
     g_main_context_push_thread_default(mainContext);
+
     GMainLoopPtr loopPtr(g_main_loop_new(mainContext, FALSE));
-    GMainLoop* loop = loopPtr.get();
+    ::streamLoop = loopPtr.get();
 
     for(const auto& pair: context.config.reStreamers) {
         const std::string& uniqueId = pair.first;
@@ -352,7 +414,7 @@ int StreamerMain(
     if(wsConfig.port) {
         wsServerPtr = std::make_unique<signalling::WsServer>(
             wsConfig,
-            loop,
+            ::streamLoop,
             std::bind(
                 CreateWebRTSPSession,
                 std::make_shared<WebRTCConfig>(),
@@ -400,12 +462,49 @@ int StreamerMain(
 #endif
 #endif
 
-    g_main_loop_run(loop);
+    g_main_loop_run(::streamLoop);
+    ::streamLoop = nullptr;
 
     g_main_context_pop_thread_default(mainContext);
+    ::mainContext = nullptr;
     g_main_context_unref(mainContext);
 
     ::streamContext = nullptr;
 
     return 0;
+}
+
+void StartStreamerThread(
+#if ENABLE_BROWSER_UI
+    const http::Config& httpConfig,
+    const signalling::Config& wsConfig,
+#endif
+    const Config& config)
+{
+    if(::mainContext || ::streamThread.joinable())
+        return;
+
+    ::mainContext = g_main_context_new();
+
+    std::thread thread(StreamerMain,
+#if ENABLE_BROWSER_UI
+        httpConfig,
+        wsConfig,
+#endif
+        config,
+        ::mainContext);
+
+    ::streamThread.swap(thread);
+}
+
+void StopStreamerThread()
+{
+    if(!::mainContext || !::streamThread.joinable())
+        return;
+
+    PostQuit();
+    ::streamThread.join();
+
+    g_main_context_unref(::mainContext);
+    ::mainContext = nullptr;
 }

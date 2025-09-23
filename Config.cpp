@@ -78,6 +78,16 @@ void Config::removeReStreamer(const std::string& id)
         reStreamersOrder.end());
 }
 
+Config::ReStreamer ConfigChanges::ReStreamerChanges::makeReStreamer() const
+{
+    return Config::ReStreamer {
+        sourceUrl ? *sourceUrl : std::string(),
+        description ? *description : std::string(),
+        targetUrl ? *targetUrl : std::string(),
+        enabled ? *enabled : false,
+    };
+}
+
 std::string UserConfigPath(const std::string& userConfigDir)
 {
     return userConfigDir + "/" + ConfigFileName;

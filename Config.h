@@ -55,7 +55,13 @@ struct ConfigChanges
 };
 
 struct ConfigChanges::ReStreamerChanges {
+    std::optional<std::string> sourceUrl;
+    std::optional<std::string> description;
+    std::optional<std::string> targetUrl;
     std::optional<bool> enabled;
+    bool drop = false;
+
+    Config::ReStreamer makeReStreamer() const;
 };
 
 std::string UserConfigPath(const std::string& userConfigDir);

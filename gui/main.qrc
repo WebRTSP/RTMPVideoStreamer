@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="video-dark.svg">icons/video-dark.svg</file>
+        <file alias="video-light.svg">icons/video-light.svg</file>
+        <file alias="video-off-dark.svg">icons/video-off-dark.svg</file>
+        <file alias="video-off-light.svg">icons/video-off-light.svg</file>
+        <file alias="log-out-dark.svg">icons/log-out-dark.svg</file>
+        <file alias="log-out-light.svg">icons/log-out-light.svg</file>
+        <file alias="plus-light.svg">icons/plus-light.svg</file>
+        <file alias="plus-dark.svg">icons/plus-dark.svg</file>
+        <file alias="square-pen-dark.svg">icons/square-pen-dark.svg</file>
+        <file alias="square-pen-light.svg">icons/square-pen-light.svg</file>
+        <file alias="trash-dark.svg">icons/trash-dark.svg</file>
+        <file alias="trash-light.svg">icons/trash-light.svg</file>
+    </qresource>
+</RCC>

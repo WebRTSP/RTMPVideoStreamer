@@ -1,4 +1,4 @@
-#include <gst/gst.h>
+#include <glib.h>
 
 #include <libconfig.h>
 
@@ -11,6 +11,10 @@
 #include "Config.h"
 #include "ConfigHelpers.h"
 #include "StreamerMain.h"
+
+#if ENABLE_GUI
+#include "gui/GuiMain.h"
+#endif
 
 #if ENABLE_BROWSER_UI
 #include "RestApi.h"
@@ -231,6 +235,19 @@ bool LoadConfig(
     signalling::Config loadedWsConfig = *wsConfig;
 #endif
     Config loadedConfig = *config;
+
+#if ENABLE_GUI
+    if(const auto& appConfigPath = AppConfigPath()) {
+        LoadConfig(
+#   if ENABLE_BROWSER_UI
+            loadedHttpConfig,
+            loadedWsConfig,
+#   endif
+            &loadedConfig,
+            nullptr,
+            *appConfigPath);
+    }
+#else
     Config loadedAppConfig;
 
     if(const auto& appConfigPath = AppConfigPath()) {
@@ -262,6 +279,7 @@ bool LoadConfig(
             &loadedAppConfig,
             configFile);
     }
+#endif
 
     bool success = true;
     if(loadedConfig.reStreamers.empty()) {
@@ -320,10 +338,22 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+#if ENABLE_GUI
+    StartStreamerThread(
+#   if ENABLE_BROWSER_UI
+        httpConfig,
+        wsConfig,
+#   endif
+        config);
+    const int result = GuiMain(argc, argv, &config);
+    StopStreamerThread();
+    return result;
+#else
     return StreamerMain(
 #   if ENABLE_BROWSER_UI
         httpConfig,
         wsConfig,
 #   endif
         config);
+#endif
 }
