@@ -101,6 +101,9 @@ void SaveAppConfig(const Config& appConfig)
 
         config_setting_t* target = config_setting_add(streamer, "target", CONFIG_TYPE_STRING);
         config_setting_set_string(target, it->second.targetUrl.c_str());
+
+        config_setting_t* description = config_setting_add(streamer, "description", CONFIG_TYPE_STRING);
+        config_setting_set_string(description, it->second.description.c_str());
     }
 
     if(!config_write_file(&config, targetPath->c_str())) {
