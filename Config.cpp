@@ -6,6 +6,8 @@
 
 #include <libconfig.h>
 
+#include "CxxPtr/libconfigDestroy.h"
+
 #include "Log.h"
 #include "ConfigHelpers.h"
 
@@ -120,8 +122,9 @@ void SaveAppConfig(const Config& appConfig)
 
     Log()->info("Writing config to \"{}\"", *targetPath);
 
-    g_auto(config_t) config;
+    config_t config;
     config_init(&config);
+    ConfigDestroy autoConfigDestroy(&config);
 
     config_setting_t* root = config_root_setting(&config);
     config_setting_t* streamers = config_setting_add(root, "streamers", CONFIG_TYPE_LIST);

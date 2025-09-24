@@ -2,6 +2,9 @@
 
 #include <libconfig.h>
 
+#include "CxxPtr/GlibPtr.h"
+#include "CxxPtr/libconfigDestroy.h"
+
 #if ENABLE_BROWSER_UI
 #include "WebRTSP/Http/Config.h"
 #include "WebRTSP/Signalling/Config.h"
@@ -126,11 +129,12 @@ void LoadStreamers(
                 }
             }
 
-            g_autofree gchar* uniqueId = nullptr;
+            gchar* uniqueId = nullptr;
             if(!id) {
                 uniqueId = g_uuid_string_random();
                 id = uniqueId;
             }
+            GCharPtr uniqueIdPtr(uniqueId);
 
             loadedConfig->addReStreamer(
                 id,
@@ -157,8 +161,9 @@ void LoadConfig(
         return;
     }
 
-    g_auto(config_t) config;
+    config_t config;
     config_init(&config);
+    ConfigDestroy autoConfigDestroy(&config);
 
     Log()->info("Loading config \"{}\"", configFile);
     if(!config_read_file(&config, configFile.c_str())) {
@@ -206,7 +211,8 @@ void LoadConfig(
     config_lookup_string(&config, "key", &key);
 
     if(source && key) {
-        g_autofree gchar* uniqueId = g_uuid_string_random();
+        gchar* uniqueId = g_uuid_string_random();
+        GCharPtr uniqueIdPtr(uniqueId);
         loadedConfig->addReStreamer(
             uniqueId,
             Config::ReStreamer {

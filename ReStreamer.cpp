@@ -72,8 +72,8 @@ gboolean ReStreamer::onBusMessage(GstMessage* message)
             onEos(false);
             break;
         case GST_MESSAGE_ERROR: {
-            g_autofree gchar* debug = nullptr;
-            g_autoptr(GError) error = nullptr;
+            gchar* debug = nullptr;
+            GError* error = nullptr;
             gst_message_parse_error(message, &error, &debug);
 
             if(debug) {
@@ -81,6 +81,8 @@ gboolean ReStreamer::onBusMessage(GstMessage* message)
             } else {
                 Log()->error("Got error from GStreamer pipeline:\n{}", error->message);
             }
+            if(debug) g_free(debug);
+            if(error) g_error_free(error);
 
             onEos(true);
             break;
@@ -172,8 +174,7 @@ void ReStreamer::start() noexcept
     g_object_set(decodebin, "caps", supportedCaps, nullptr);
 
     auto onBusMessageCallback =
-        (gboolean (*) (GstBus*, GstMessage*, gpointer))
-        [] (GstBus* bus, GstMessage* message, gpointer userData) -> gboolean
+        + [] (GstBus* bus, GstMessage* message, gpointer userData) -> gboolean
     {
         ReStreamer* self = static_cast<ReStreamer*>(userData);
         return self->onBusMessage(message);
@@ -182,8 +183,7 @@ void ReStreamer::start() noexcept
     gst_bus_add_watch(busPtr.get(), onBusMessageCallback, this);
 
     auto srcPadAddedCallback =
-        (void (*)(GstElement*, GstPad*, gpointer))
-        [] (GstElement* decodebin, GstPad* pad, gpointer userData)
+        + [] (GstElement* decodebin, GstPad* pad, gpointer userData)
     {
         ReStreamer* self = static_cast<ReStreamer*>(userData);
         self->srcPadAdded(decodebin, pad);
@@ -191,8 +191,7 @@ void ReStreamer::start() noexcept
     g_signal_connect(decodebin, "pad-added", G_CALLBACK(srcPadAddedCallback), this);
 
     auto noMorePadsCallback =
-        (void (*)(GstElement*,  gpointer))
-        [] (GstElement* decodebin, gpointer userData)
+        + [] (GstElement* decodebin, gpointer userData)
     {
         ReStreamer* self = static_cast<ReStreamer*>(userData);
         self->noMorePads(decodebin);
