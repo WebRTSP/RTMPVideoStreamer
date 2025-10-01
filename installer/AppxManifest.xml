@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="3965RSATom.RTMPVideoStreamer"
+    Publisher="CN=570F2068-5F06-4CEE-9762-B6E6CCA41BC2"
+    Version="0.1.0.0" />
+
+  <Properties>
+    <DisplayName>RTMP Video Streamer</DisplayName>
+    <PublisherDisplayName>RSATom</PublisherDisplayName>
+    <Logo>video-50.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.17763.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="bin/RTMPVideoStreamer.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="RTMP Video Streamer"
+        Description="Utility to restream video from Ip Cam to RTMP server (like YouTube Live or VK Video)"
+        BackgroundColor="transparent"
+        Square150x150Logo="video-150.png"
+        Square44x44Logo="video-44.png">
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

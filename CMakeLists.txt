@@ -249,4 +249,78 @@ if(SNAPCRAFT_BUILD)
     else()
         install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/rtmp-streamer.conf.sample DESTINATION etc)
     endif()
+elseif(WIN32 AND ENABLE_GUI)
+    file(TO_CMAKE_PATH "$ENV{GSTREAMER_1_0_ROOT_MSVC_X86_64}/bin" GSTREAMER_BIN_DIR)
+    file(TO_CMAKE_PATH "$ENV{GSTREAMER_1_0_ROOT_MSVC_X86_64}/lib/gstreamer-1.0" GSTREAMER_LIB_DIR)
+
+    set(GSTREAMER_BIN_FILES
+        ffi-7.dll
+        gio-2.0-0.dll
+        glib-2.0-0.dll
+        gmodule-2.0-0.dll
+        gobject-2.0-0.dll
+        gstaudio-1.0-0.dll
+        gstbase-1.0-0.dll
+        gstnet-1.0-0.dll
+        gstpbutils-1.0-0.dll
+        gstreamer-1.0-0.dll
+        gstriff-1.0-0.dll
+        gstrtp-1.0-0.dll
+        gstrtsp-1.0-0.dll
+        gstsdp-1.0-0.dll
+        gsttag-1.0-0.dll
+        gstvideo-1.0-0.dll
+        intl-8.dll
+        libcrypto-3-x64.dll
+        libssl-3-x64.dll
+        orc-0.4-0.dll
+        pcre2-8-0.dll
+        rtmp-1.dll
+        z-1.dll
+    )
+    list(TRANSFORM GSTREAMER_BIN_FILES PREPEND "${GSTREAMER_BIN_DIR}/")
+
+    set(GSTREAMER_LIB_FILES
+        gstasf.dll
+        gstaudiotestsrc.dll
+        gstcoreelements.dll
+        gstflv.dll
+        gstplayback.dll
+        gstrtmp.dll
+        gstrtp.dll
+        gstrtpmanager.dll
+        gstrtsp.dll
+        gstudp.dll
+    )
+    list(TRANSFORM GSTREAMER_LIB_FILES PREPEND "${GSTREAMER_LIB_DIR}/")
+
+    set(INSTALLER_FILES
+        AppxManifest.xml
+        video-44.png
+        video-50.png
+        video-150.png
+    )
+    list(TRANSFORM INSTALLER_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/installer/")
+
+    qt_generate_deploy_app_script(
+        TARGET ${PROJECT_NAME}
+        OUTPUT_SCRIPT DEPLOY_SCRIPT
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${DEPLOY_SCRIPT})
+    install(TARGETS ${PROJECT_NAME}
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+    )
+    install(FILES
+        ${GSTREAMER_BIN_FILES}
+        DESTINATION bin)
+    install(FILES
+        ${GSTREAMER_LIB_FILES}
+        DESTINATION lib/gstreamer-1.0)
+    install(FILES
+        ${INSTALLER_FILES}
+        DESTINATION .)
+
+    #"C:\Program Files (x86)\Windows Kits\10\App Certification Kit\makeappx.exe" pack /d ./install /p RTMPVideoStreamer.appx /o
 endif()
