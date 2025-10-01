@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="3965RSATom.YouTubeLiveStreamer"
+    Publisher="CN=570F2068-5F06-4CEE-9762-B6E6CCA41BC2"
+    ProcessorArchitecture="x64"
+    Version="${PROJECT_VERSION}.0" />
+
+  <Properties>
+    <DisplayName>YouTube Live Streamer</DisplayName>
+    <PublisherDisplayName>RSATom</PublisherDisplayName>
+    <Logo>youtube-50.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.20348.0" />
+    <PackageDependency Name="Microsoft.VCLibs.140.00.UWPDesktop" MinVersion="14.0.0.0" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="bin/YouTubeLiveStreamer.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="YouTube Live Streamer"
+        Description="Utility to restream video from Ip Cam to YouTube Live"
+        BackgroundColor="transparent"
+        Square150x150Logo="youtube-150.png"
+        Square44x44Logo="youtube-44.png">
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
