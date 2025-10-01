@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.28)
 
 project(RTMPVideoStreamer)
 
@@ -68,6 +68,7 @@ if(WIN32)
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
         GIT_TAG v1.15.3
+        EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(spdlog)
 
@@ -75,6 +76,7 @@ if(WIN32)
         libconfig
         GIT_REPOSITORY https://github.com/hyperrealm/libconfig.git
         GIT_TAG v1.8.1
+        EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(libconfig)
 
