@@ -143,6 +143,9 @@ void SaveAppConfig(const Config& appConfig)
 
         config_setting_t* description = config_setting_add(streamer, "description", CONFIG_TYPE_STRING);
         config_setting_set_string(description, it->second.description.c_str());
+
+        config_setting_t* enable = config_setting_add(streamer, "enable", CONFIG_TYPE_BOOL);
+        config_setting_set_bool(enable, it->second.enabled);
     }
 
     if(!config_write_file(&config, targetPath->c_str())) {
