@@ -61,6 +61,7 @@ StreamerEditDialog::~StreamerEditDialog()
 void StreamerEditDialog::validate()
 {
     const bool valid =
+        !_ui->nameEdit->text().trimmed().isEmpty() &&
         !_ui->sourceUrlEdit->text().trimmed().isEmpty() &&
 #if VK_VIDEO_STREAMER || YOUTUBE_LIVE_STREAMER
         !_ui->keyEdit->text().trimmed().isEmpty();
