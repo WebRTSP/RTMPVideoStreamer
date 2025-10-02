@@ -350,7 +350,10 @@ int main(int argc, char *argv[])
         httpConfig,
         wsConfig,
 #   endif
-        config);
+        config,
+        [] (const std::string& streamerId, NotificationType type) {
+            PostNotification(streamerId, type);
+        });
     const int result = GuiMain(argc, argv, &config);
     StopStreamerThread();
     return result;

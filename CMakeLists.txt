@@ -119,6 +119,7 @@ set(SOURCES
     Defines.h
     Log.h
     Log.cpp
+    Types.h
     Config.h
     Config.cpp
     ConfigHelpers.h
@@ -154,6 +155,8 @@ if(ENABLE_GUI)
     set(GUI_SOURCES
         gui/GuiMain.h
         gui/GuiMain.cpp
+        gui/NotificationProxy.h
+        gui/NotificationProxy.cpp
         gui/Theme.h
         gui/Theme.cpp
         gui/StreamerEditDialog.h

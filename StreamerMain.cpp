@@ -19,6 +19,7 @@
 
 #include "Log.h"
 #include "Defines.h"
+#include "Types.h"
 #include "Config.h"
 #include "ReStreamer.h"
 
@@ -45,6 +46,7 @@ typedef std::map<std::string, std::unique_ptr<GstStreamingSource>> ReStreamers;
 #endif
 struct Context {
     Config config;
+    NotificationCallback messageCallback;
 #if ENABLE_BROWSER_UI
     ReStreamers reStreamers;
 #endif
@@ -154,7 +156,26 @@ void StartReStream(
         std::forward_as_tuple(
             reStreamerConfig.sourceUrl,
             reStreamerConfig.targetUrl,
-            [context, reStreamerId] () {
+            [context, reStreamerId] (ReStreamer::EosReason reason) {
+                if(context->messageCallback) {
+                    NotificationType type = NotificationType::OtherError;
+                    switch(reason) {
+                        case ReStreamer::EosReason::Disconnect:
+                            type = NotificationType::Eos;
+                            break;
+                        case ReStreamer::EosReason::RtspSourceError:
+                            type = NotificationType::SourceError;
+                            break;
+                        case ReStreamer::EosReason::RtmpTargetError:
+                            type = NotificationType::TargetError;
+                            break;
+                        case ReStreamer::EosReason::OtherError:
+                            type = NotificationType::OtherError;
+                            break;
+                    }
+
+                    context->messageCallback(reStreamerId, type);
+                }
                 // it's required to do reStreamerId copy
                 // since ReStreamer instance
                 // will be destroyed inside ScheduleStartReStream
@@ -202,6 +223,7 @@ void ScheduleStartReStream(
             return false;
         };
 
+    // FIXME! add reconnect interval increase on error
     GSource* timeoutSource = addSecondsTimeout(
         RECONNECT_INTERVAL,
         GSourceFunc(reconnect),
@@ -349,9 +371,10 @@ int StreamerMain(
     const signalling::Config& wsConfig,
 #endif
     const Config& config,
+    const NotificationCallback& messageCallback,
     GMainContext* mainContext)
 {
-    Context context { config };
+    Context context { config, messageCallback };
     ::streamContext = &context;
 
     gst_init(nullptr, nullptr);
@@ -479,7 +502,8 @@ void StartStreamerThread(
     const http::Config& httpConfig,
     const signalling::Config& wsConfig,
 #endif
-    const Config& config)
+    const Config& config,
+    const NotificationCallback& messageCallback)
 {
     if(::mainContext || ::streamThread.joinable())
         return;
@@ -492,6 +516,7 @@ void StartStreamerThread(
         wsConfig,
 #endif
         config,
+        messageCallback,
         ::mainContext);
 
     ::streamThread.swap(thread);

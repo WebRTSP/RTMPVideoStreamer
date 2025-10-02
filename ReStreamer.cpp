@@ -13,9 +13,17 @@ static const auto Log = ReStreamerLog;
 ReStreamer::ReStreamer(
     const std::string& sourceUrl,
     const std::string& targetUrl,
-    const std::function<void ()>& onEos) :
+    const EosCallback& onEos) :
     _onEos(onEos), _sourceUrl(sourceUrl), _targetUrl(targetUrl)
 {
+    if(GstElementFactory* rtspSinkFactory = gst_element_factory_find("rtspsrc")) {
+        _rtspSrcType = gst_element_factory_get_element_type(rtspSinkFactory);
+        gst_object_unref(rtspSinkFactory);
+    }
+    if(GstElementFactory* rtmpSinkFactory = gst_element_factory_find("rtmpsink")) {
+        _rtmpSinkType = gst_element_factory_get_element_type(rtmpSinkFactory);
+        gst_object_unref(rtmpSinkFactory);
+    }
 }
 
 ReStreamer::~ReStreamer()
@@ -69,7 +77,7 @@ gboolean ReStreamer::onBusMessage(GstMessage* message)
 {
     switch(GST_MESSAGE_TYPE(message)) {
         case GST_MESSAGE_EOS:
-            onEos(false);
+            onEos(EosReason::Disconnect);
             break;
         case GST_MESSAGE_ERROR: {
             gchar* debug = nullptr;
@@ -81,10 +89,18 @@ gboolean ReStreamer::onBusMessage(GstMessage* message)
             } else {
                 Log()->error("Got error from GStreamer pipeline:\n{}", error->message);
             }
+
             if(debug) g_free(debug);
             if(error) g_error_free(error);
 
-            onEos(true);
+            EosReason reason = EosReason::OtherError;
+            if(G_OBJECT_TYPE(message->src) == _rtspSrcType) {
+                reason = EosReason::RtspSourceError;
+            } else if(G_OBJECT_TYPE(message->src) == _rtmpSinkType){
+                reason = EosReason::RtmpTargetError;
+            }
+
+            onEos(reason);
             break;
         }
         case GST_MESSAGE_APPLICATION: {
@@ -99,7 +115,7 @@ gboolean ReStreamer::onBusMessage(GstMessage* message)
 
                 gboolean error = FALSE;
                 gst_structure_get_boolean(structure, "error", &error);
-                onEos(error != FALSE);
+                onEos(error ? EosReason::OtherError : EosReason::Disconnect);
             }
             break;
         }
@@ -110,9 +126,9 @@ gboolean ReStreamer::onBusMessage(GstMessage* message)
     return TRUE;
 }
 
-void ReStreamer::onEos(bool /*error*/)
+void ReStreamer::onEos(EosReason reason)
 {
-    _onEos();
+    _onEos(reason);
 }
 
 

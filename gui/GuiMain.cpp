@@ -13,6 +13,7 @@
 
 #include "Theme.h"
 #include "StreamerEditDialog.h"
+#include "NotificationProxy.h"
 
 
 namespace {
@@ -143,6 +144,8 @@ void RefreshTrayMenu(Config* config, QMenu* menu)
     }
 }
 
+Q_GLOBAL_STATIC(NotificationProxy, notificationProxy)
+
 }
 
 int GuiMain(int argc, char *argv[], Config* config)
@@ -170,5 +173,44 @@ int GuiMain(int argc, char *argv[], Config* config)
     });
     trayIcon.show();
 
+    QObject::connect(
+        notificationProxy,
+        &NotificationProxy::notification,
+        &trayMenu,
+        [config, &trayIcon] (const std::string& streamerId, NotificationType type) {
+            auto it = config->reStreamers.find(streamerId);
+            if(it == config->reStreamers.end())
+                return;
+
+            QString message;
+            switch(type) {
+                case NotificationType::Eos:
+                    return;
+                case NotificationType::SourceError:
+                    message = "Failed to receive data from stream source...";
+                    break;
+                case NotificationType::TargetError:
+                    message = "Failed to send data to stream target...";
+                    break;
+                case NotificationType::OtherError:
+                    message = "Something went wrong...";
+                    break;
+            }
+
+            const Config::ReStreamer& reStreamer = it->second;
+
+            trayIcon.showMessage(
+                QString::fromStdString(reStreamer.description),
+                message,
+                QSystemTrayIcon::Warning,
+                3000);
+        },
+        Qt::QueuedConnection);
+
     return app.exec();
+}
+
+void PostNotification(const std::string& streamerId, NotificationType type)
+{
+    notificationProxy->postNotification(streamerId, type);
 }

@@ -9,10 +9,18 @@
 class ReStreamer
 {
 public:
+    enum class EosReason {
+        Disconnect,
+        RtspSourceError,
+        RtmpTargetError,
+        OtherError,
+    };
+    typedef std::function<void (EosReason reason)> EosCallback;
+
     ReStreamer(
         const std::string& sourceUrl,
         const std::string& targetUrl,
-        const std::function<void ()>& onEos);
+        const EosCallback& onEos);
     ~ReStreamer();
 
     const std::string& sourceUrl() const { return _sourceUrl; };
@@ -38,13 +46,16 @@ private:
         GstElement* rtcbin,
         gboolean error);
 
-    void onEos(bool error);
+    void onEos(EosReason);
 
 private:
-    std::function<void ()> _onEos;
+    EosCallback _onEos;
 
     const std::string _sourceUrl;
     const std::string _targetUrl;
+
+    GType _rtspSrcType = 0;
+    GType _rtmpSinkType = 0;
 
     GstElementPtr _pipelinePtr;
     GstElementPtr _flvMuxPtr;
