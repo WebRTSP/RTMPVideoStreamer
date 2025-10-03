@@ -77,15 +77,15 @@ void StreamerEditDialog::validate()
 
     const bool changed =
         !_reStreamer || (
-            description != _reStreamer->description ||
-            sourceUrl != _reStreamer->sourceUrl ||
+            description != QString::fromStdString(_reStreamer->description) ||
+            sourceUrl != QString::fromStdString(_reStreamer->sourceUrl) ||
 #if VK_VIDEO_STREAMER || YOUTUBE_LIVE_STREAMER
             (
                 !key.isEmpty() &&
                 Config::ReStreamer::BuildTargetUrl(key.toStdString()) != _reStreamer->targetUrl
             ) ||
 #else
-            targetUrl != _reStreamer->targetUrl ||
+            targetUrl != QString::fromStdString(_reStreamer->targetUrl) ||
 #endif
             enabled != _reStreamer->enabled
         );
@@ -109,9 +109,9 @@ void StreamerEditDialog::accept()
     const bool enabled = _ui->enabledCheckBox->checkState() == Qt::CheckState::Checked;
 
     if(_reStreamer) { // editing
-        const bool descriptionChanged = _reStreamer->description != description;
-        const bool sourceUrlChanged = _reStreamer->sourceUrl != sourceUrl;
-        const bool targetUrlChanged = _reStreamer->targetUrl != targetUrl;
+        const bool descriptionChanged = QString::fromStdString(_reStreamer->description) != description;
+        const bool sourceUrlChanged = QString::fromStdString(_reStreamer->sourceUrl) != sourceUrl;
+        const bool targetUrlChanged = QString::fromStdString(_reStreamer->targetUrl) != targetUrl;
         const bool enabledChanged = _reStreamer->enabled != enabled;
 
         if(descriptionChanged || sourceUrlChanged || targetUrlChanged || enabledChanged) {
