@@ -2,6 +2,8 @@
     <qresource prefix="/icons">
         <file alias="video-dark.svg">icons/video-dark.svg</file>
         <file alias="video-light.svg">icons/video-light.svg</file>
+        <file alias="youtube-dark.svg">icons/youtube-dark.svg</file>
+        <file alias="youtube-light.svg">icons/youtube-light.svg</file>
         <file alias="video-off-dark.svg">icons/video-off-dark.svg</file>
         <file alias="video-off-light.svg">icons/video-off-light.svg</file>
         <file alias="log-out-dark.svg">icons/log-out-dark.svg</file>

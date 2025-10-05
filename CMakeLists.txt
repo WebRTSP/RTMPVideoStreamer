@@ -163,8 +163,16 @@ if(ENABLE_GUI)
         gui/StreamerEditDialog.cpp
         gui/StreamerEditDialog.ui
         gui/main.qrc
-        gui/app.rc
     )
+    if(YOUTUBE_LIVE_STREAMER)
+        set(GUI_RESOURCES
+            gui/YouTubeLiveStreamer.rc
+        )
+    else()
+        set(GUI_RESOURCES
+            gui/app.rc
+        )
+    endif()
 
     file(GLOB_RECURSE ICONS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
         icons/*)
@@ -172,6 +180,7 @@ if(ENABLE_GUI)
     qt_add_executable(${PROJECT_NAME}
         WIN32 MACOSX_BUNDLE
         ${GUI_SOURCES}
+        ${GUI_RESOURCES}
         ${SOURCES}
         ${ICONS}
     )

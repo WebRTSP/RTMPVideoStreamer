@@ -156,7 +156,11 @@ int GuiMain(int argc, char *argv[], Config* config)
         return -1;
     }
 
+#if YOUTUBE_LIVE_STREAMER
+    app.setWindowIcon(Theme::icon("youtube"));
+#else
     app.setWindowIcon(Theme::icon("video"));
+#endif
 
     app.setQuitOnLastWindowClosed(false);
 
@@ -166,7 +170,11 @@ int GuiMain(int argc, char *argv[], Config* config)
         RefreshTrayMenu(config, &trayMenu);
     });
 
+#if YOUTUBE_LIVE_STREAMER
+    QSystemTrayIcon trayIcon(Theme::icon("youtube"));
+#else
     QSystemTrayIcon trayIcon(Theme::icon("video"));
+#endif
     trayIcon.setContextMenu(&trayMenu);
     QObject::connect(&trayIcon, &QSystemTrayIcon::activated, [] () {
         ActivateEditDialog();
