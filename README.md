@@ -2,7 +2,12 @@
 Base app for streaming IP Cams to RTMP servers without transcoding.  
 _Only cams with video stream encoded by h264 codec are supported._
 
----
+## Windows Store
+* [RTMP Video Streamer](https://apps.microsoft.com/detail/9N9BBP56NZNC)
+* [YouTube Live Streamer](https://apps.microsoft.com/detail/9P2DN1RSXSQJ)
+
+## Snap Store
+
 ### YouTube Live Streamer
 Streams IP Cams to YouTube Live.
 [![youtube-live-streamer](https://snapcraft.io/youtube-live-streamer/badge.svg)](https://snapcraft.io/youtube-live-streamer)
@@ -18,7 +23,6 @@ Streams IP Cams to YouTube Live.
 #### Troubleshooting
 * Look to the logs with `sudo snap logs youtube-live-streamer` or `sudo snap logs youtube-live-streamer -f`
 
----
 ### VK Video Streamer
 Streams IP Cams to VK Video.
 [![vk-video-streamer](https://snapcraft.io/vk-video-streamer/badge.svg)](https://snapcraft.io/vk-video-streamer)
@@ -34,6 +38,5 @@ Streams IP Cams to VK Video.
 #### Troubleshooting
 * Look to the logs with `sudo snap logs vk-video-streamer` or `sudo snap logs vk-video-streamer -f`
 
----
 ### Hints
 * It's possible to view/start/stop configured video streams on http://localhost:4080 page
