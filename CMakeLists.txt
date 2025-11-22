@@ -364,6 +364,9 @@ elseif(WIN32 AND ENABLE_GUI)
             DESTINATION .
             RENAME AppxManifest.xml)
 
+        if(YOUTUBE_LIVE_STREAMER)
+            set(CPACK_PACKAGE_NAME "YouTubeLiveStreamer")
+        endif()
         set(CPACK_GENERATOR "External")
         set(CPACK_EXTERNAL_ENABLE_STAGING TRUE)
         set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/installer/MakeAppX.cmake")
