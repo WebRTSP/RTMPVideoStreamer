@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(RTMPVideoStreamer VERSION 0.1.6)
+project(RTMPVideoStreamer VERSION 0.1.8)
 
 option(VK_VIDEO_STREAMER "Build as VK Video Streamer" OFF)
 option(YOUTUBE_LIVE_STREAMER "Build as YouTube Live Streamer" OFF)
