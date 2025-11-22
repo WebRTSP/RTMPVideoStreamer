@@ -19,6 +19,15 @@ StreamerEditDialog::StreamerEditDialog(
 {
     _ui->setupUi(this);
 
+    QFont font = _ui->youTubeStudioLinkLabel->font();
+    font.setPointSize(font.pointSize() - 1);
+    font.setItalic(true);
+    _ui->youTubeStudioLinkLabel->setFont(font);
+
+    QPalette palette = _ui->youTubeStudioLinkLabel->palette();
+    palette.setColor(QPalette::WindowText, palette.color(QPalette::PlaceholderText));
+    _ui->youTubeStudioLinkLabel->setPalette(palette);
+
 #if VK_VIDEO_STREAMER || YOUTUBE_LIVE_STREAMER
     _ui->keyLabel->setVisible(true);
     _ui->keyEdit->setVisible(true);
@@ -29,6 +38,10 @@ StreamerEditDialog::StreamerEditDialog(
     _ui->keyEdit->setVisible(false);
     _ui->targetUrlLabel->setVisible(true);
     _ui->targetUrlEdit->setVisible(true);
+#endif
+
+#if !YOUTUBE_LIVE_STREAMER
+    _ui->youTubeStudioLinkLabel->setVisible(false);
 #endif
 
     if(reStreamer) {
