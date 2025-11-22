@@ -83,14 +83,14 @@ if(WIN32)
 
     set(GSTREAMER_ROOT_DIR "$ENV{GSTREAMER_1_0_ROOT_MSVC_X86_64}")
     set(GSTREAMER_INCLUDE_DIRS
-        "${GSTREAMER_ROOT_DIR}include/glib-2.0"
-        "${GSTREAMER_ROOT_DIR}lib/glib-2.0/include"
-        "${GSTREAMER_ROOT_DIR}include/gstreamer-1.0"
+        "${GSTREAMER_ROOT_DIR}/include/glib-2.0"
+        "${GSTREAMER_ROOT_DIR}/lib/glib-2.0/include"
+        "${GSTREAMER_ROOT_DIR}/include/gstreamer-1.0"
     )
     set(GSTREAMER_LIBRARIES
-        "${GSTREAMER_ROOT_DIR}lib/glib-2.0.lib"
-        "${GSTREAMER_ROOT_DIR}lib/gobject-2.0.lib"
-        "${GSTREAMER_ROOT_DIR}lib/gstreamer-1.0.lib"
+        "${GSTREAMER_ROOT_DIR}/lib/glib-2.0.lib"
+        "${GSTREAMER_ROOT_DIR}/lib/gobject-2.0.lib"
+        "${GSTREAMER_ROOT_DIR}/lib/gstreamer-1.0.lib"
     )
 
     add_subdirectory(WebRTSP/RtStreaming/deps/CxxPtr)
