@@ -1,5 +1,11 @@
 #include <glib.h>
 
+#include <QtSystemDetection>
+#ifdef Q_OS_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include <libconfig.h>
 
 #include "CxxPtr/GlibPtr.h"
@@ -312,6 +318,29 @@ bool LoadConfig(
 
 int main(int argc, char *argv[])
 {
+#if defined(Q_OS_WIN) && ENABLE_GUI
+    HANDLE hSingleAppMutex = CreateMutex(
+        nullptr,
+        FALSE,
+#if YOUTUBE_LIVE_STREAMER
+        TEXT("org.WebRTSP.YouTubeLiveStreamer")
+#else
+        TEXT("org.WebRTSP.RTMPVideoStreamer")
+#endif
+        );
+
+    struct MutexAutoClose {
+        ~MutexAutoClose() {
+            CloseHandle(hSingleAppMutex);
+        }
+
+        HANDLE hSingleAppMutex;
+    } mutexAutoClose = { hSingleAppMutex };
+
+    if(GetLastError() == ERROR_ALREADY_EXISTS)
+        return -1;
+#endif
+
 #if ENABLE_BROWSER_UI
     http::Config httpConfig {
         .port = DEFAULT_HTTP_PORT,
