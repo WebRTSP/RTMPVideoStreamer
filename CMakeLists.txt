@@ -164,15 +164,25 @@ if(ENABLE_GUI)
         gui/StreamerEditDialog.cpp
         gui/StreamerEditDialog.ui
         gui/main.qrc
+        gui/app.rc.in
     )
-    if(YOUTUBE_LIVE_STREAMER)
-        set(GUI_RESOURCES
-            gui/YouTubeLiveStreamer.rc
+    if(WIN32)
+        if(VK_VIDEO_STREAMER)
+            set(PRODUCT_NAME "VK Video Streamer")
+        elseif(YOUTUBE_LIVE_STREAMER)
+            set(PRODUCT_NAME "YouTube Live Streamer")
+            set(APP_ICON ${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/youtube.ico)
+        else()
+            set(PRODUCT_NAME "RTMP Video Streamer")
+            set(APP_ICON ${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/app.ico)
+        endif()
+
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/gui/app.rc.in
+            ${CMAKE_CURRENT_BINARY_DIR}/app.rc
+            @ONLY
         )
-    else()
-        set(GUI_RESOURCES
-            gui/app.rc
-        )
+        set(GUI_RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
     endif()
 
     file(GLOB_RECURSE ICONS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
