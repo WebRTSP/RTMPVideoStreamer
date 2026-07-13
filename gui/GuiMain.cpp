@@ -22,7 +22,7 @@ QPointer<StreamerEditDialog> activeEditDialog;
 
 void ActivateEditDialog()
 {
-    if(activeEditDialog){
+    if(activeEditDialog) {
         activeEditDialog->raise();
         activeEditDialog->activateWindow();
     }
@@ -33,7 +33,7 @@ void ShowEditDialog(
     const std::string& streamerId,
     Config::ReStreamer* streamer = nullptr)
 {
-    if(activeEditDialog){
+    if(activeEditDialog) {
         return;
     } else {
         activeEditDialog = new StreamerEditDialog(config, streamerId, streamer);

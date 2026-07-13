@@ -96,7 +96,7 @@ gboolean ReStreamer::onBusMessage(GstMessage* message)
             EosReason reason = EosReason::OtherError;
             if(G_OBJECT_TYPE(message->src) == _rtspSrcType) {
                 reason = EosReason::RtspSourceError;
-            } else if(G_OBJECT_TYPE(message->src) == _rtmpSinkType){
+            } else if(G_OBJECT_TYPE(message->src) == _rtmpSinkType) {
                 reason = EosReason::RtmpTargetError;
             }
 
