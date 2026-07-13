@@ -176,8 +176,12 @@ int GuiMain(int argc, char *argv[], Config* config)
     QSystemTrayIcon trayIcon(Theme::icon("video"));
 #endif
     trayIcon.setContextMenu(&trayMenu);
-    QObject::connect(&trayIcon, &QSystemTrayIcon::activated, [] () {
-        ActivateEditDialog();
+    QObject::connect(&trayIcon, &QSystemTrayIcon::activated, [&trayMenu] () {
+        if(activeEditDialog) {
+            ActivateEditDialog();
+        } else {
+            trayMenu.popup(QCursor::pos());
+        }
     });
     trayIcon.show();
 
@@ -214,6 +218,18 @@ int GuiMain(int argc, char *argv[], Config* config)
                 3000);
         },
         Qt::QueuedConnection);
+
+    if(config->firstStart) {
+        trayIcon.showMessage(
+            QStringLiteral("Application started"),
+            QStringLiteral("Click the tray icon to open the menu"),
+#if YOUTUBE_LIVE_STREAMER
+            Theme::icon("youtube"),
+#else
+            Theme::icon("video"),
+#endif
+            3000);
+    }
 
     return app.exec();
 }

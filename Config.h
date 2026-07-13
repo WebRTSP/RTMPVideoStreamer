@@ -14,6 +14,10 @@ struct Config
 
     struct ReStreamer;
 
+#if ENABLE_GUI
+    bool firstStart = true;
+#endif
+
     spdlog::level::level_enum logLevel = spdlog::level::info;
 
 #if VK_VIDEO_STREAMER

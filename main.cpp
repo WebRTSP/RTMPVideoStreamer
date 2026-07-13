@@ -167,6 +167,8 @@ void LoadConfig(
         return;
     }
 
+    loadedConfig->firstStart = false;
+
     config_t config;
     config_init(&config);
     ConfigDestroy autoConfigDestroy(&config);
